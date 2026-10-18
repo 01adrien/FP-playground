@@ -1,0 +1,35 @@
+COMBINATEURS 
+------------------------------
+Many          zero fois ou plus
+Many1         au moins une fois
+Left, Right   enchainer deux parseurs, ne garder qu'un cote
+Optional      essaie p, renvoie un Optionof (ne rate jamais)
+Between       Between ouvrant fermant p
+Sep-by        elements separes par un separateur (zero ou plus)
+Sep-by1       idem, au moins un
+Chainl       operateurs associatifs a gauche (1-2-3 = (1-2)-3)
+Chainr       operateurs associatifs a droite (2^3^2 = 2^(3^2))
+Replace       lance p, renvoie une valeur fixe
+Map2          combine deux parseurs avec une fonction
+
+PARSEURS
+----------------------
+pint             many1 sur les chiffres, puis digit-value
+peof           reussit seulement si l'entree est epuisee
+spaces, token    avaler les espaces
+pletter, pidentifier
+psigned          entier avec "-" optionnel
+pbool
+pstring  chaine entre guillemets (sans echappements au debut)
+
+APPLICATIONS
+------------
+1. Arithmetique E/T/F avec pint, token, chainl, Between
+2. Parseur de S-expressions (atomes, nombres, listes avec sep-by)
+3. Parseur JSON
+4. Texte -> AST de l'interpreteur du livre (via les S-expressions)
+5. Parseur lambda calcul
+
+NOTES
+-----
+- Ne pas nommer un combinateur "some" ou "none" : deja pris par Optionof.

@@ -1,0 +1,5 @@
+racket -l errortrace -t exemple.rkt
+
+The Seasoned Schemer (Friedman & Felleisen)
+Essentials of Programming Languages (EOPL, Friedman & Wand)
+

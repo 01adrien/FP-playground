@@ -1,0 +1,44 @@
+{
+  // Écran d'accueil et distractions
+  "workbench.startupEditor": "none",
+  "workbench.tips.enabled": false,
+  "workbench.layoutControl.enabled": false,
+  "window.commandCenter": false,
+  "extensions.ignoreRecommendations": true,
+  // Interface réduite
+  "workbench.activityBar.location": "hidden",
+  "workbench.statusBar.visible": false,
+  "workbench.editor.showTabs": "single",
+  "breadcrumbs.enabled": false,
+  "editor.stickyScroll.enabled": false,
+  // Éditeur épuré
+  "editor.minimap.enabled": false,
+  "editor.glyphMargin": false,
+  "editor.folding": false,
+  "editor.lightbulb.enabled": "off",
+  "editor.renderLineHighlight": "none",
+  "editor.occurrencesHighlight": "off",
+  "editor.guides.indentation": false,
+  "editor.overviewRulerBorder": false,
+  "editor.hideCursorInOverviewRuler": true,
+  "editor.scrollbar.vertical": "hidden",
+  "editor.scrollbar.horizontal": "hidden",
+  "editor.inlayHints.enabled": "off",
+  "editor.wordWrap": "on",
+  "editor.cursorBlinking": "smooth",
+  // Mode zen (Ctrl+K Z)
+  "zenMode.fullScreen": false,
+  "zenMode.centerLayout": false,
+  "zenMode.hideLineNumbers": false,
+  "zenMode.hideStatusBar": true,
+  "zenMode.hideActivityBar": true,
+  "zenMode.showTabs": "none",
+  // Racket
+  "files.associations": {
+    "*.rkt": "racket"
+  },
+  "[racket]": {
+    "editor.defaultFormatter": "lishizhen.racket-fmt",
+    "editor.formatOnSave": true
+  }
+}

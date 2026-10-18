@@ -1,0 +1,21 @@
+{
+  "name": "PLAI Racket",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "evzen-wybitul.magic-racket",
+        "lfs.vscode-emacs-friendly",
+        "lishizhen.racket-fmt"
+      ],
+      "settings": {
+        "[racket]": {
+          "editor.defaultFormatter": "lishizhen.racket-fmt",
+          "editor.formatOnSave": true
+        }
+      }
+    }
+  }
+}
