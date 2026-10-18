@@ -51,7 +51,7 @@
                      (some c)
                      (none)))))
 
-;; (bind `parser` fn)
+;; (bind parser fn)
 ;;  1. lance `parser` sur l'entrée ;
 ;;  2. si échec, on propage l'échec reconstruit pour changer son type :
 ;;     un (failure ...) de type 'a n'est pas un (failure ...) de type 'b.
