@@ -106,25 +106,27 @@
 ;; =====================================================================
 
 ;; ---------- succès : le caractère et le reste ----------
-(test (spaceP " abc") (success #\space "abc"))
-(test (spaceP " ") (success #\space ""))
+(test (pspace " abc") (success #\space "abc"))
+(test (pspace " ") (success #\space ""))
 
 ;; ---------- un seul espace est consommé ----------
-(test (spaceP "  x") (success #\space " x"))
-(test (spaceP "   ") (success #\space "  "))
+(test (pspace "  x") (success #\space " x"))
+(test (pspace "   ") (success #\space "  "))
 
 ;; ---------- rejets ----------
-(test (failure? (spaceP "abc")) #t)
-(test (failure? (spaceP "")) #t)
-(test (failure? (spaceP "1 ")) #t) ; l'espace n'est pas en tête
+(test (failure? (pspace "abc")) #t)
+(test (failure? (pspace "")) #t)
+(test (failure? (pspace "1 ")) #t) ; l'espace n'est pas en tête
 ;; les autres blancs ne sont PAS des #\space
-(test (failure? (spaceP "\t")) #t)
-(test (failure? (spaceP "\n")) #t)
+(test (failure? (pspace "\t")) #t)
+(test (failure? (pspace "\n")) #t)
 
 ;; ---------- avec Many : le cas qui t'intéresse vraiment ----------
-(test ((Many spaceP) "   x") (success (list #\space #\space #\space) "x"))
-(test ((Many spaceP) "x") (success empty "x")) ; zéro espace : succès, pas échec
-(test ((Many spaceP) "") (success empty ""))
+(test ((Many pspace) "   x") (success (list #\space #\space #\space) "x"))
+(test ((Many pspace) "x") (success empty "x")) ; zéro espace : succès, pas échec
+(test ((Many pspace) "") (success empty ""))
+
+(done "spacep")
 
 ;; =====================================================================
 ;; PNUM : reconnaît UN chiffre et renvoie sa valeur numérique
@@ -163,3 +165,130 @@
 ;; pnum doit voir exactement les mêmes chiffres que pdigit
 (test (success? (pnum "4")) (success? (pdigit "4")))
 (test (failure? (pnum "x")) (failure? (pdigit "x")))
+
+(done "pnum")
+;; =====================================================================
+;; PINT : entier positif ou négatif (un "-" optionnel, puis 1+ chiffres)
+;; =====================================================================
+
+;; ---------- positifs ----------
+(test (pint "7") (success 7 ""))
+(test (pint "42") (success 42 ""))
+(test (pint "1234567890") (success 1234567890 ""))
+(test (pint "42abc") (success 42 "abc"))
+(test (pint "12 34") (success 12 " 34")) ; s'arrête à l'espace
+
+;; ---------- négatifs ----------
+(test (pint "-7") (success -7 ""))
+(test (pint "-42") (success -42 ""))
+(test (pint "-42abc") (success -42 "abc"))
+(test (pint "-12 34") (success -12 " 34"))
+
+;; ---------- zéros ----------
+(test (pint "0") (success 0 ""))
+(test (pint "-0") (success 0 "")) ; -0 vaut 0
+(test (pint "007") (success 7 "")) ; zéros en tête acceptés
+(test (pint "-007") (success -7 ""))
+(test (pint "100") (success 100 "")) ; le 0 final compte (piège sur la valeur)
+
+;; ---------- le reste après l'entier est intact ----------
+(test (pint "5+3") (success 5 "+3"))
+(test (pint "5-3") (success 5 "-3")) ; le "-" après est un reste, pas un signe
+(test (pint "1.5") (success 1 ".5")) ; pas de décimaux
+
+;; ---------- rejets ----------
+(test (failure? (pint "")) #t)
+(test (failure? (pint "abc")) #t)
+(test (failure? (pint "-")) #t) ; signe sans chiffre
+(test (failure? (pint "-abc")) #t)
+(test (failure? (pint "--5")) #t) ; double signe
+(test (failure? (pint "- 5")) #t) ; espace entre le signe et le chiffre
+(test (failure? (pint " 5")) #t) ; espace devant (le token viendra après)
+
+(done "pint")
+
+;; =====================================================================
+;; PID : identifiant (une suite de caractères pris dans id-chars)
+;; =====================================================================
+
+;; ---------- succès ----------
+(test (pid "x") (success "x" ""))
+(test (pid "foo") (success "foo" ""))
+(test (pid "FooBar") (success "FooBar" "")) ; majuscules
+(test (pid "x1") (success "x1" "")) ; chiffre après une lettre
+(test (pid "snake_case") (success "snake_case" ""))
+(test (pid "long_identifier_with_many_chars_123") (success "long_identifier_with_many_chars_123" ""))
+
+;; ---------- il s'arrête au premier caractère interdit ----------
+(test (pid "foo bar") (success "foo" " bar")) ; espace
+(test (pid "foo}") (success "foo" "}")) ; accolade
+(test (pid "foo)") (success "foo" ")"))
+(test (pid "foo(bar)") (success "foo" "(bar)"))
+(test (pid "foo\"bar") (success "foo" "\"bar")) ; guillemet
+(test (pid "foo;bar") (success "foo" ";bar"))
+
+;; ---------- rejets ----------
+(test (failure? (pid "")) #t)
+(test (failure? (pid " foo")) #t) ; espace devant
+(test (failure? (pid "{foo")) #t)
+(test (failure? (pid "\"foo\"")) #t)
+
+;; ---------- un identifiant peut commencer par un chiffre (pour l'instant) ----------
+;; pchars-in ne distingue pas le premier caractère : "123" est un pid valide.
+;; Quand tu voudras interdire ça, ce test devra devenir (failure? ...).
+(test (pid "123") (success "123" ""))
+(test (pid "1abc") (success "1abc" ""))
+
+;; ---------- conflit avec l'arithmétique (si + et - sont dans id-chars) ----------
+;; à supprimer ou inverser selon le contenu de ton id-chars :
+(test (pid "x+1") (success "x+1" "")) ; un seul identifiant
+(test (pid "a-b") (success "a-b" ""))
+
+;; ---------- avec Many ----------
+(test ((Many (Between (Many pspace) pid (Many pspace))) "a b  c ") (success (list "a" "b" "c") ""))
+
+(done "pid")
+
+;; =====================================================================
+;; PSTRING-LITERAL : chaîne entre guillemets, renvoie le contenu
+;; =====================================================================
+
+;; ---------- succès ----------
+(test (pstring-literal "\"abc\"") (success "abc" ""))
+(test (pstring-literal "\"a\"") (success "a" ""))
+(test (pstring-literal "\"hello world\"") (success "hello world" "")) ; espaces autorisés
+(test (pstring-literal "\"  x  \"") (success "  x  " "")) ; espaces conservés
+(test (pstring-literal "\"abc\" reste") (success "abc" " reste"))
+(test (pstring-literal "\"abc\"def") (success "abc" "def"))
+
+;; ---------- les guillemets ne font pas partie du résultat ----------
+(test (string-length (success-val (pstring-literal "\"abc\""))) 3)
+
+;; ---------- caractères autorisés dans la chaîne ----------
+(test (pstring-literal "\"{+ 1 2}\"") (success "{+ 1 2}" "")) ; accolades
+(test (pstring-literal "\"a,b;c:d\"") (success "a,b;c:d" ""))
+(test (pstring-literal "\"123\"") (success "123" ""))
+(test (pstring-literal "\"it's\"") (success "it's" "")) ; apostrophe
+
+;; ---------- une seule chaîne est lue ----------
+(test (pstring-literal "\"ab\"\"cd\"") (success "ab" "\"cd\""))
+
+;; ---------- rejets ----------
+(test (failure? (pstring-literal "")) #t)
+(test (failure? (pstring-literal "abc")) #t) ; pas de guillemets
+(test (failure? (pstring-literal "\"abc")) #t) ; pas de guillemet fermant
+(test (failure? (pstring-literal "abc\"")) #t) ; pas de guillemet ouvrant
+(test (failure? (pstring-literal "\"")) #t) ; un seul guillemet
+(test (failure? (pstring-literal " \"abc\"")) #t) ; espace devant
+
+;; ---------- chaîne vide : échoue avec Many1 ----------
+;; si tu passes à Many (zéro ou plus), ce test devient (success "" "")
+(test (failure? (pstring-literal "\"\"")) #t)
+
+;; ---------- caractères interdits dans string-chars ----------
+(test (failure? (pstring-literal "\"a\\b\"")) #t) ; backslash
+(test (failure? (pstring-literal "\"a\nb\"")) #t) ; retour à la ligne
+;; guillemet échappé : pas géré, la chaîne s'arrête à \
+(test (failure? (pstring-literal "\"a\\\"b\"")) #t)
+
+(done "pstring-literal")

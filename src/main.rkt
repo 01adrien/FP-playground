@@ -28,23 +28,24 @@
 ;; --------
 ;; Parser
 ;; --------
+
 (numP : (Parser Exp))
-(define numP (Map numE pnum))
+(define numP (Map numE pint))
 
 (plusP : ((Char * (Exp * Exp)) -> Exp))
 (define (plusP v)
   (plusE (fst (snd v)) (snd (snd v))))
 
 (expP : (Parser Exp))
-(define expP (lazy-parser (lambda () (Between (Many spaceP) (Or numP opP) (Many spaceP)))))
+(define expP (lazy-parser (lambda () (Between (Many pspace) (Or numP opP) (Many pspace)))))
 
 (addP : (Parser Exp))
-(define addP (Map plusP (Triple (And (Skip (Many spaceP)) (pchar #\+)) expP expP)))
+(define addP (Map plusP (Triple (And (Skip (Many pspace)) (pchar #\+)) expP expP)))
 
 (opP : (Parser Exp))
 (define opP (Between (pchar #\{) addP (pchar #\})))
 
-(display ((Many expP) "{+ 5 {+ 6 {+ 7 8}}}"))
+(display ((Many expP) "{+ 555 {+ -6 {+ 789 -8}}}"))
 
 ;; ------------
 ;; Interpreter

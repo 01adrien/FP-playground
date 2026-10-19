@@ -60,7 +60,6 @@
 
 ;; (Many parser)
 ;; applique zéro fois ou plus `parser`
-;; renvoie la liste de toutes les valeurs, dans l'ordre de lecture.
 (Many : ((Parser 'a) -> (Parser (Listof 'a))))
 (define (Many parser)
   (lambda (str)
@@ -84,3 +83,6 @@
 (Skip : ((Parser 'a) -> (Parser Void)))
 (define (Skip parser)
   (bind parser (lambda (_) (return (void)))))
+
+;; (Option parser)
+;; (Option : (Parser 'a))

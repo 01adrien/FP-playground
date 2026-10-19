@@ -1,3 +1,4 @@
+# syntax=docker/dockerfile:1
 FROM racket/racket:8.18
 
 RUN apt-get update \
@@ -6,6 +7,11 @@ RUN apt-get update \
 
 RUN raco pkg install --auto --skip-installed --no-docs plait fmt racket-langserver
 
+RUN cat <<'EOF' >> /root/.bashrc
 alias ll='ls -alF'
 alias racket='rlwrap racket'
+PS1='\w\n\$ '
 EOF
+
+WORKDIR /workspace
+CMD ["bash"]
