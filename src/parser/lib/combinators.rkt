@@ -45,9 +45,8 @@
           (bind parser2 (lambda (b) (bind parser3 (lambda (c) (return (pair a (pair b c))))))))))
 
 ;; (Sequence parsers)
-;; applique les `parsers` l'un après l'autre sur la même entrée
-;; (chacun reprend là où le précédent s'est arrêté) et collecte leurs valeurs
-;; dans une liste, dans l'ordre. Un seul échec fait échouer toute la séquence.
+;; applique les `parsers` l'un après l'autre sur la même entrée.
+;; Un seul échec fait échouer toute la séquence.
 ;; Pas d'accumulateur : la liste se construit au retour de la récursion
 (Sequence : ((Listof (Parser 'a)) -> (Parser (Listof 'a))))
 (define (Sequence parsers)
@@ -59,21 +58,29 @@
               (lambda (x) (Map (lambda (res) (cons x res)) (Sequence (rest parsers)))))
         str)])))
 
-;; (many parser)
-;; applique `parser` autant de fois que possible (zéro fois ou plus) et
+;; (Many parser)
+;; applique zéro fois ou plus `parser`
 ;; renvoie la liste de toutes les valeurs, dans l'ordre de lecture.
-;;
-;; - many ne fait JAMAIS échouer : si `parser` ne convient pas dès le début,
-;;   il réussit avec empty et rend la chaîne intacte.
-;; - Il s'arrête au premier échec de `p`. Cet échec n'est pas une erreur :
-;;   la chaîne restante est celle d'après le dernier succès.
-;;   ex. (many (pchar #\a)) sur "aaab" -> succès (a a a), reste "b"
-;;       (many (pchar #\a)) sur "bbb"  -> succès empty,   reste "bbb"
-;;
-;; Idée : « un `p` suivi de many p, sinon rien » (un Or entre les deux cas).
-;; Contrairement à Sequence, la fin de la récursion ne dépend pas d'une
-;; liste mais de l'entrée : c'est l'échec de `p` qui arrête la boucle.
-;;
-;; Attention : si `p` réussit sans rien consommer (ex. return), many ne
-;; s'arrête jamais -> boucle infinie. À éviter ou à garder en tête.
-;; (many : ((Parser 'a) -> (Parser (Listof 'a))))
+(Many : ((Parser 'a) -> (Parser (Listof 'a))))
+(define (Many parser)
+  (lambda (str)
+    (let ([r (parser str)])
+      (cond
+        [(failure? r) (success empty str)]
+        [else ((Map (lambda (res) (cons (success-val r) res)) (Many parser)) (success-rem r))]))))
+
+;; (Many1 parser)
+;; applique une fois ou plus `parser`
+(Many1 : ((Parser 'a) -> (Parser (Listof 'a))))
+(define (Many1 parser)
+  (Map (lambda (res) (cons (fst res) (snd res))) (And parser (Many parser))))
+
+;; (Between open body close)
+(Between : ((Parser 'a) (Parser 'b) (Parser 'c) -> (Parser 'b)))
+(define (Between open body close)
+  (Map (lambda (res) (fst (snd res))) (Triple open body close)))
+
+;; (Skip parser)
+(Skip : ((Parser 'a) -> (Parser Void)))
+(define (Skip parser)
+  (bind parser (lambda (_) (return (void)))))

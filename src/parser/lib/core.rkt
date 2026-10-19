@@ -4,11 +4,9 @@
 
 ;; Résultat d'un parseur :
 ;;  - success : la valeur produite + ce qui reste de la chaîne à lire
-;;  - failure : un message d'erreur
+;;  - failure : un msg d'erreur
 ;; Le 'a est le type de la valeur produite (Char, Number, liste...).
-(define-type (ParseResult 'a)
-             [success (value : 'a) (remaining : String)]
-             [failure (message : String)])
+(define-type (ParseResult 'a) [success (val : 'a) (rem : String)] [failure (msg : String)])
 
 ;; Un parseur est une fonction : elle prend une chaîne et renvoie un ParseResult.
 ;; Construire un parseur (ex: (pchar #\a)) donne une fonction
@@ -63,8 +61,8 @@
   (lambda (str)
     (let ([r (parser str)])
       (if (failure? r)
-          (failure (failure-message r))
-          (let ([next (fn (success-value r))]) (next (success-remaining r)))))))
+          (failure (failure-msg r))
+          (let ([next (fn (success-val r))]) (next (success-rem r)))))))
 
 ;; (return val)
 ;; réussit toujours, sans consommer d'entrée, en produisant `val`.

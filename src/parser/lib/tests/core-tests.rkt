@@ -87,7 +87,7 @@
 ;; succès : on compare le résultat entier (valeur ET reste)
 (test ((via-map is-a) "abc") ((satisfy is-a) "abc"))
 (test ((via-map is-a) "a") ((satisfy is-a) "a"))
-;; échec : on ne compare pas le texte du message, seulement le fait d'échouer
+;; échec : on ne compare pas le texte du msg, seulement le fait d'échouer
 (test (failure? ((via-map is-a) "xbc")) #t)
 (test (failure? ((via-map is-a) "")) #t)
 (done "satisfy-map")
@@ -105,14 +105,14 @@
 
 ;; succès : renvoie le caractère lu et consomme exactement un caractère
 (test (success? (any-char "abc")) #t)
-(test (success-value (any-char "abc")) #\a)
-(test (success-remaining (any-char "abc")) "bc")
-(test (success-value (only-a "abc")) #\a)
-(test (success-remaining (only-a "abc")) "bc")
+(test (success-val (any-char "abc")) #\a)
+(test (success-rem (any-char "abc")) "bc")
+(test (success-val (only-a "abc")) #\a)
+(test (success-rem (only-a "abc")) "bc")
 
 ;; entrée d'un seul caractère : il reste la chaîne vide
-(test (success-value (any-char "z")) #\z)
-(test (success-remaining (any-char "z")) "")
+(test (success-val (any-char "z")) #\z)
+(test (success-rem (any-char "z")) "")
 
 ;; le prédicat ne regarde que le PREMIER caractère, pas les suivants
 (test (success? (only-a "abb")) #t)
@@ -130,24 +130,24 @@
 (test (failure? (any-char "")) #t)
 (test (failure? (only-a "")) #t)
 
-;; messages d'erreur (à adapter si tu changes le texte dans core.rkt)
-(test (failure-message (any-char "")) "satisfy(): unexpected end of input")
-(test (failure-message (only-a "xbc")) "satisfy(): unexpected x")
+;; msgs d'erreur (à adapter si tu changes le texte dans core.rkt)
+(test (failure-msg (any-char "")) "satisfy(): unexpected end of input")
+(test (failure-msg (only-a "xbc")) "satisfy(): unexpected x")
 
 ;; satisfy est une valeur réutilisable : le même parseur donne le même résultat
-(test (success-value (only-a "abc")) (success-value (only-a "abc")))
+(test (success-val (only-a "abc")) (success-val (only-a "abc")))
 (done "satisfy")
 
 ;; =====================================================================
 ;; return : parseur qui réussit TOUJOURS, sans rien consommer
 ;; =====================================================================
 (test (success? ((return 42) "abc")) #t)
-(test (success-value ((return 42) "abc")) 42)
-(test (success-remaining ((return 42) "abc")) "abc") ; la chaîne est rendue intacte
+(test (success-val ((return 42) "abc")) 42)
+(test (success-rem ((return 42) "abc")) "abc") ; la chaîne est rendue intacte
 (test (success? ((return 42) "")) #t) ; réussit même sur l'entrée vide
-(test (success-remaining ((return 42) "")) "")
-(test (success-value ((return "x") "abc")) "x") ; marche avec n'importe quel type
-(test (success-value ((return #\z) "abc")) #\z)
+(test (success-rem ((return 42) "")) "")
+(test (success-val ((return "x") "abc")) "x") ; marche avec n'importe quel type
+(test (success-val ((return #\z) "abc")) #\z)
 (done "return")
 
 ;; =====================================================================
@@ -159,8 +159,8 @@
   ((bind (pchar #\a) (lambda (_) (pchar #\b))) input))
 
 (test (success? (run-bind-const "abc")) #t)
-(test (success-value (run-bind-const "abc")) #\b) ; on obtient la valeur du 2e parseur
-(test (success-remaining (run-bind-const "abc")) "c")
+(test (success-val (run-bind-const "abc")) #\b) ; on obtient la valeur du 2e parseur
+(test (success-rem (run-bind-const "abc")) "c")
 (test (failure? (run-bind-const "xbc")) #t) ; l'échec du 1er traverse
 (test (failure? (run-bind-const "axc")) #t) ; l'échec du 2e aussi
 (test (failure? (run-bind-const "a")) #t)
@@ -180,8 +180,8 @@
                (pchar #\z))))
    input))
 
-(test (success-value (run-bind-dep "xy")) #\y)
-(test (success-value (run-bind-dep "wz")) #\z)
+(test (success-val (run-bind-dep "xy")) #\y)
+(test (success-val (run-bind-dep "wz")) #\z)
 (test (failure? (run-bind-dep "xz")) #t) ;; x attend y
 (test (failure? (run-bind-dep "wy")) #t) ;; w attend z
 
@@ -189,28 +189,28 @@
 (define (run-bind-return input)
   ((bind pdigit (lambda (c) (return (list c c)))) input))
 
-(test (success-value (run-bind-return "7x")) (list #\7 #\7))
-(test (success-remaining (run-bind-return "7x")) "x")
+(test (success-val (run-bind-return "7x")) (list #\7 #\7))
+(test (success-rem (run-bind-return "7x")) "x")
 (test (failure? (run-bind-return "x7")) #t)
 
 ;; chaînage de deux bind (c'est la forme qui redonne And)
 (define (run-bind-bind input)
   ((bind (pchar #\a) (lambda (c1) (bind (pchar #\b) (lambda (c2) (return (pair c1 c2)))))) input))
 
-(test (fst (success-value (run-bind-bind "abc"))) #\a)
-(test (snd (success-value (run-bind-bind "abc"))) #\b)
-(test (success-remaining (run-bind-bind "abc")) "c")
+(test (fst (success-val (run-bind-bind "abc"))) #\a)
+(test (snd (success-val (run-bind-bind "abc"))) #\b)
+(test (success-rem (run-bind-bind "abc")) "c")
 (test (failure? (run-bind-bind "axc")) #t)
 (test (failure? (run-bind-bind "xbc")) #t)
 
 ;; ---------- lois : bind et return doivent être cohérents entre eux ----------
 
 ;; identité à gauche : bind (return v) f  se comporte comme  f v
-(test (success-value ((bind (return #\a) (lambda (c) (pchar c))) "abc")) #\a)
+(test (success-val ((bind (return #\a) (lambda (c) (pchar c))) "abc")) #\a)
 (test (failure? ((bind (return #\a) (lambda (c) (pchar c))) "xbc")) #t)
 
 ;; identité à droite : bind p return  se comporte comme  p
-(test (success-value ((bind pdigit return) "5x")) #\5)
-(test (success-remaining ((bind pdigit return) "5x")) "x")
+(test (success-val ((bind pdigit return) "5x")) #\5)
+(test (success-rem ((bind pdigit return) "5x")) "x")
 (test (failure? ((bind pdigit return) "x5")) #t)
 (done "bind")

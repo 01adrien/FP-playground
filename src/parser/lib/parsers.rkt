@@ -25,3 +25,6 @@
 ;; reconnaît un chiffre et renvoie le Char.
 (pdigit : (Parser Char))
 (define pdigit (pany-char (string->list "0123456789")))
+
+(spaceP : (Parser Char))
+(define spaceP (pchar #\space))

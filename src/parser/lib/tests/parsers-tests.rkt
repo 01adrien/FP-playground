@@ -39,9 +39,9 @@
 
 (test (success? (pdigit "0")) #t) ; bornes de l'intervalle
 (test (success? (pdigit "9")) #t)
-(test (success-value (pdigit "7abc")) #\7) ; la valeur est un Char, pas un Number
-(test (success-remaining (pdigit "123")) "23")
-(test (success-remaining (pdigit "5")) "")
+(test (success-val (pdigit "7abc")) #\7) ; la valeur est un Char, pas un Number
+(test (success-rem (pdigit "123")) "23")
+(test (success-rem (pdigit "5")) "")
 
 ;; rejets : lettre, espace, signe, vide
 (test (failure? (pdigit "a1")) #t)
@@ -100,3 +100,66 @@
 (test (failure? (any-digit-char ":")) #t) ; juste après '9'
 (test (any-digit-char "5z") (pdigit "5z")) ; même résultat que pdigit
 (done "pany-char")
+
+;; =====================================================================
+;; SPACEP : reconnaît UN espace (le caractère #\space)
+;; =====================================================================
+
+;; ---------- succès : le caractère et le reste ----------
+(test (spaceP " abc") (success #\space "abc"))
+(test (spaceP " ") (success #\space ""))
+
+;; ---------- un seul espace est consommé ----------
+(test (spaceP "  x") (success #\space " x"))
+(test (spaceP "   ") (success #\space "  "))
+
+;; ---------- rejets ----------
+(test (failure? (spaceP "abc")) #t)
+(test (failure? (spaceP "")) #t)
+(test (failure? (spaceP "1 ")) #t) ; l'espace n'est pas en tête
+;; les autres blancs ne sont PAS des #\space
+(test (failure? (spaceP "\t")) #t)
+(test (failure? (spaceP "\n")) #t)
+
+;; ---------- avec Many : le cas qui t'intéresse vraiment ----------
+(test ((Many spaceP) "   x") (success (list #\space #\space #\space) "x"))
+(test ((Many spaceP) "x") (success empty "x")) ; zéro espace : succès, pas échec
+(test ((Many spaceP) "") (success empty ""))
+
+;; =====================================================================
+;; PNUM : reconnaît UN chiffre et renvoie sa valeur numérique
+;; =====================================================================
+
+;; ---------- chaque chiffre donne sa valeur (un Number, pas un Char) ----------
+(test (success-val (pnum "0")) 0)
+(test (success-val (pnum "1")) 1)
+(test (success-val (pnum "2")) 2)
+(test (success-val (pnum "3")) 3)
+(test (success-val (pnum "4")) 4)
+(test (success-val (pnum "5")) 5)
+(test (success-val (pnum "6")) 6)
+(test (success-val (pnum "7")) 7)
+(test (success-val (pnum "8")) 8)
+(test (success-val (pnum "9")) 9)
+
+;; ---------- le résultat complet : valeur et reste ----------
+(test (pnum "7abc") (success 7 "abc"))
+(test (pnum "5") (success 5 ""))
+
+;; ---------- un seul chiffre est consommé ----------
+(test (pnum "123") (success 1 "23")) ; pas 123
+(test (pnum "99") (success 9 "9"))
+
+;; ---------- rejets ----------
+(test (failure? (pnum "a1")) #t)
+(test (failure? (pnum " 1")) #t) ; espace devant
+(test (failure? (pnum "-1")) #t) ; pas de signe
+(test (failure? (pnum "")) #t)
+;; caractères voisins dans la table ASCII : attrapent un < à la place d'un <=
+(test (failure? (pnum "/")) #t) ; juste avant '0'
+(test (failure? (pnum ":")) #t) ; juste après '9'
+
+;; ---------- cohérence avec pdigit ----------
+;; pnum doit voir exactement les mêmes chiffres que pdigit
+(test (success? (pnum "4")) (success? (pdigit "4")))
+(test (failure? (pnum "x")) (failure? (pdigit "x")))

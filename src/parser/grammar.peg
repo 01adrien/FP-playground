@@ -1,0 +1,22 @@
+(+ 5 (+ 8 8))
+
+Math lisp
+    E = '(' ['+' | '*'] T E ')' | T
+    T = '(' E ')' | digit
+
+Brainfuck 
+    Prog = (Cmd | Loop)*
+    Loop = '[' Prog ']'
+    Cmd  = '+' | '-' | '<' | '>' | '.' | ','
+
+Lambda calcul
+    Term <- Lambda / App
+    Lambda <- '\' Ident '.' Term
+    App  <- Atom Atom*
+    Atom <- Ident / '(' Term ')'
+
+Regex
+    Alt  <- Seq ('|' Seq)*
+    Seq  <- Rep*
+    Rep  <- Atom ('*' / '+' / '?')?
+    Atom <- Char / '.' / '(' Alt ')'
