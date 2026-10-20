@@ -13,7 +13,7 @@
       "settings": {
         "[racket]": {
           "editor.defaultFormatter": "lishizhen.racket-fmt",
-          "editor.formatOnSave": true
+          "editor.formatOnSave": false
         }
       }
     }

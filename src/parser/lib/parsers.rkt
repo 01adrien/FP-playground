@@ -80,3 +80,12 @@
 ;; reconnaît une chaîne entre guillemets et renvoie son contenu sans les guillemets.
 (pstring-literal : (Parser String))
 (define pstring-literal (Between (pchar #\") (pchars-in string-chars) (pchar #\")))
+
+(pstring : (String -> (Parser String)))
+(define (pstring str)
+  (Map list->string (Sequence (map pchar (string->list str)))))
+
+;; (pbool)
+;; reconnaît true ou false et renvoie le Boolean correspondant.
+(pbool : (Parser Boolean))
+(define pbool (Or (Replace (pstring "true") #t) (Replace (pstring "false") #f)))

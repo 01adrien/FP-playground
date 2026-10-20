@@ -38,11 +38,23 @@
 
 ;; (Triple parser1 parser2 parser3)
 ;; enchaîne trois parseurs ; renvoie leurs valeurs en paire imbriquée (a . (b . c)).
-(Triple : ((Parser 'a) (Parser 'b) (Parser 'c) -> (Parser ('a * ('b * 'c)))))
+(Triple : ((Parser 'a) (Parser 'b) (Parser 'c) 
+            -> (Parser ('a * ('b * 'c)))))
 (define (Triple parser1 parser2 parser3)
   (bind parser1
         (lambda (a)
-          (bind parser2 (lambda (b) (bind parser3 (lambda (c) (return (pair a (pair b c))))))))))
+          (bind parser2 
+            (lambda (b) 
+              (bind parser3 
+                (lambda (c) (return (pair a (pair b c))))))))))
+
+;; (Quad p1 p2 p3 p4)
+;; enchaîne quatre parseurs, renvoie une paire imbriquée (a . (b . (c . d))).
+(Quad : ((Parser 'a) (Parser 'b) (Parser 'c) (Parser 'd)
+         -> (Parser ('a * ('b * ('c * 'd))))))
+(define (Quad parser1 parser2 parser3 parser4)
+  (Triple parser1 parser2 (And parser3 parser4)))
+
 
 ;; (Sequence parsers)
 ;; applique les `parsers` l'un après l'autre sur la même entrée.
@@ -84,5 +96,8 @@
 (define (Skip parser)
   (bind parser (lambda (_) (return (void)))))
 
-;; (Option parser)
-;; (Option : (Parser 'a))
+;; (Replace value)
+;; retourne un parser avec value si le parser en args passe
+(Replace : ((Parser 'a) 'b -> (Parser 'b)))
+(define (Replace parser value)
+  (bind parser (lambda (_) (return value))))

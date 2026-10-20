@@ -6,7 +6,9 @@
 ;;  - success : la valeur produite + ce qui reste de la chaîne à lire
 ;;  - failure : un msg d'erreur
 ;; Le 'a est le type de la valeur produite (Char, Number, liste...).
-(define-type (ParseResult 'a) [success (val : 'a) (rem : String)] [failure (msg : String)])
+(define-type (ParseResult 'a) 
+             [success (val : 'a) (rem : String)] 
+             [failure (msg : String)])
 
 ;; Un parseur est une fonction : elle prend une chaîne et renvoie un ParseResult.
 ;; Construire un parseur (ex: (pchar #\a)) donne une fonction
@@ -17,6 +19,9 @@
 ;; Retarde la construction de `parser` jusqu'au moment où on l'utilise.
 ;; Nécessaire pour les grammaires récursives (E -> ... E ...), car Plait est
 ;; strict : sans ça, définir E demanderait E avant qu'il existe.
+;; retarde la construction d'un parseur jusqu'au premier appel, pour permettre
+;; les références vers une définition plus bas (récursion mutuelle).
+;; Les types sont vérifiés normalement : seule l'évaluation est repoussée.
 (lazy-parser : ((-> (Parser 'a)) -> (Parser 'a)))
 (define (lazy-parser parser)
   (lambda (str) ((parser) str)))
@@ -29,12 +34,10 @@
 (satisfy-map : ((Char -> (Optionof 'a)) -> (Parser 'a)))
 (define (satisfy-map fn)
   (lambda (str)
-    (type-case (Optionof Char)
-               (string-first str)
+    (type-case (Optionof Char) (string-first str)
                [(none) (failure "satisfy(): unexpected end of input")]
                [(some c)
-                (type-case (Optionof 'a)
-                           (fn c)
+                (type-case (Optionof 'a) (fn c)
                            [(none)
                             (failure (string-append "satisfy(): unexpected " (char->string c)))]
                            [(some v) (success v (string-rest str))])])))

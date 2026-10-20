@@ -292,3 +292,126 @@
 (test (failure? (pstring-literal "\"a\\\"b\"")) #t)
 
 (done "pstring-literal")
+
+;; =====================================================================
+;; PBOOL : "true" -> #t, "false" -> #f
+;; =====================================================================
+
+;; ---------- succès ----------
+(test (pbool "true") (success #t ""))
+(test (pbool "false") (success #f ""))
+(test (pbool "true rest") (success #t " rest"))
+(test (pbool "false rest") (success #f " rest"))
+(test (pbool "true}") (success #t "}"))
+(test (pbool "false)") (success #f ")"))
+
+;; ---------- la valeur est bien un Boolean, pas la chaîne ----------
+(test (success-val (pbool "true")) #t)
+(test (success-val (pbool "false")) #f)
+
+;; ---------- rejets ----------
+(test (failure? (pbool "")) #t)
+(test (failure? (pbool "tru")) #t) ; préfixe incomplet
+(test (failure? (pbool "fals")) #t)
+(test (failure? (pbool "t")) #t)
+(test (failure? (pbool "yes")) #t)
+(test (failure? (pbool "1")) #t)
+(test (failure? (pbool "#t")) #t) ; pas la syntaxe Racket
+(test (failure? (pbool " true")) #t) ; espace devant
+(test (failure? (pbool "xtrue")) #t)
+
+;; ---------- sensible à la casse ----------
+(test (failure? (pbool "True")) #t)
+(test (failure? (pbool "TRUE")) #t)
+(test (failure? (pbool "False")) #t)
+
+;; ---------- les deux branches du Or sont indépendantes ----------
+;; un échec sur "true" ne doit pas empêcher "false"
+(test (pbool "false") (success #f ""))
+
+;; ---------- le piège des mots-clés (comportement actuel) ----------
+;; pbool ne regarde pas ce qui suit : "true" est lu dans "trueish"
+(test (pbool "trueish") (success #t "ish"))
+(test (pbool "falsey") (success #f "y"))
+;; quand tu ajouteras NotFollowedBy sur id-chars, ces deux tests deviennent
+;; (failure? (pbool "trueish")) #t et (failure? (pbool "falsey")) #t
+
+;; ---------- avec les autres combinateurs ----------
+(test ((Many (Between (Many pspace) pbool (Many pspace))) "true false true")
+      (success (list #t #f #t) ""))
+(test ((Many pbool) "truefalse") (success (list #t #f) "")) ; collés : OK, car pas de NotFollowedBy
+(test ((Between (pchar #\() pbool (pchar #\))) "(true)") (success #t ""))
+
+;; ---------- et vis-à-vis de pid : un identifiant peut ressembler à un booléen ----------
+;; pid reconnaît "true" comme n'importe quel identifiant
+(test (pid "true") (success "true" ""))
+;; donc l'ordre compte dans un Or : booléen d'abord, sinon "true" devient un identifiant
+(test ((Or (Map (lambda (b) (if b "bool" "bool")) pbool) pid) "true") (success "bool" ""))
+
+(done "pbool")
+
+;; =====================================================================
+;; PSTRING : reconnaît exactement une chaîne donnée
+;; =====================================================================
+
+;; ---------- succès ----------
+(test ((pstring "let") "let") (success "let" ""))
+(test ((pstring "let") "let x") (success "let" " x"))
+(test ((pstring "<-") "<- 5") (success "<-" " 5"))
+(test ((pstring "a") "abc") (success "a" "bc")) ; chaîne d'un seul caractère
+(test ((pstring "==") "===") (success "==" "=")) ; ne consomme que ce qu'il faut
+
+;; ---------- caractères spéciaux ----------
+(test ((pstring "{+") "{+ 5 6}") (success "{+" " 5 6}"))
+(test ((pstring "->") "->x") (success "->" "x"))
+(test ((pstring " ") "  x") (success " " " x")) ; l'espace est un caractère comme un autre
+
+;; ---------- le préfixe seul ne suffit pas ----------
+(test (failure? ((pstring "let") "le")) #t) ; trop court
+(test (failure? ((pstring "let") "l")) #t)
+(test (failure? ((pstring "let") "")) #t)
+
+;; ---------- mauvaise chaîne ----------
+(test (failure? ((pstring "let") "lambda")) #t)
+(test (failure? ((pstring "let") "lex")) #t) ; échec au dernier caractère
+(test (failure? ((pstring "let") "xlet")) #t) ; pas au début
+(test (failure? ((pstring "let") " let")) #t) ; espace devant
+
+;; ---------- sensible à la casse ----------
+(test (failure? ((pstring "let") "LET")) #t)
+(test (failure? ((pstring "let") "Let")) #t)
+
+;; ---------- chaîne vide : réussit sans rien consommer ----------
+(test ((pstring "") "abc") (success "" "abc"))
+(test ((pstring "") "") (success "" ""))
+
+;; ---------- backtracking : un échec ne consomme rien ----------
+(test ((Or (pstring "let") (pstring "lex")) "lex") (success "lex" ""))
+
+;; ---------- ordre du choix (piège PEG) ----------
+(test ((Or (pstring "letrec") (pstring "let")) "letrec x") (success "letrec" " x"))
+(test ((Or (pstring "let") (pstring "letrec")) "letrec x") (success "let" "rec x"))
+
+;; ---------- le piège des mots-clés ----------
+;; pstring ne regarde pas ce qui suit : "let" est reconnu dans "letter"
+(test ((pstring "let") "letter") (success "let" "ter"))
+
+;; ---------- avec les autres combinateurs ----------
+(test ((Many (pstring "ab")) "ababab!") (success (list "ab" "ab" "ab") "!"))
+(test ((Many (pstring "ab")) "aab") (success empty "aab")) ; zéro occurrence : succès
+(test ((Between (pchar #\() (pstring "let") (pchar #\))) "(let)") (success "let" ""))
+
+;; ---------- autour des booléens ----------
+(test ((pstring "true") "true") (success "true" ""))
+(test ((pstring "false") "false") (success "false" ""))
+(test (failure? ((pstring "true") "false")) #t)
+(test (failure? ((pstring "false") "true")) #t)
+(test ((Or (pstring "true") (pstring "false")) "false!") (success "false" "!"))
+
+(test ((pstring "true") "true") (success "true" ""))
+(test ((pstring "false") "false") (success "false" ""))
+(test (failure? ((pstring "true") "false")) #t)
+(test (failure? ((pstring "false") "true")) #t)
+(test ((Or (pstring "true") (pstring "false")) "false!") (success "false" "!"))
+
+(done "pstring")

@@ -1,10 +1,7 @@
 COMBINATEURS 
-------------------------------
-Many          zero fois ou plus
-Many1         au moins une fois
+------------
 Left, Right   enchainer deux parseurs, ne garder qu'un cote
 Optional      essaie p, renvoie un Optionof (ne rate jamais)
-Between       Between ouvrant fermant p
 Sep-by        elements separes par un separateur (zero ou plus)
 Sep-by1       idem, au moins un
 Chainl       operateurs associatifs a gauche (1-2-3 = (1-2)-3)
@@ -16,7 +13,7 @@ Not-followed-by
 Until
 
 PARSEURS
-----------------------
+--------
 pint             many1 sur les chiffres, puis digit-value
 peof           reussit seulement si l'entree est epuisee
 spaces, token    avaler les espaces
@@ -31,10 +28,6 @@ Formats de données : JSON, CSV, INI, TOML, S-expressions.
 Petites syntaxes : dates, URLs, e-mails, lignes de log, numéros.
 Expressions : arithmétique, booléens, calculatrices.
 Langages jouets : Brainfuck, Forth, assembleur simple, lambda-calcul, Datalog.
-
-NOTES
------
-- Ne pas nommer un combinateur "some" ou "none" : deja pris par Optionof.
 
 
 PEG 
