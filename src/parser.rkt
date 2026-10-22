@@ -27,21 +27,16 @@
 (define varP  
   (Map varE (Map string->symbol pid)))
 
-;; helper pour parse plus EXP
-(mkplusP : ((Char * (Exp * Exp)) -> Exp))
-(define (mkplusP v) 
-  (plusE (fst (snd v)) (snd (snd v))))
 
 ;; parse plus EXP
 (plusP : (Parser Exp))
 (define plusP 
   (lazy-parser
     (lambda ()
-      (Map mkplusP 
-        (Triple 
+      (Map3 (lambda (_ b c) (plusE b c)) 
           (And (Skip (Many pspace)) (pchar #\+)) 
           expP 
-          expP)))))
+          expP))))
 
 ;; parse math operation EXP
 (opP : (Parser Exp))
@@ -53,7 +48,6 @@
 (define ifkeyP
   (Skip (Triple (Many pspace) (pstring "if") (Many1 pspace))))
 
-
 ;; parse une cond EXP
 (cndP : (Parser Exp))
 (define cndP
@@ -61,8 +55,8 @@
    (lambda ()
      (Between
       (pchar #\{)
-      (Map (lambda (v) (cndE (first v) (second v) (third v)))
-           (Map snd (And ifkeyP (Sequence (list expP expP expP)))))
+      (Map2 (lambda (_ v) (cndE (first v) (second v) (third v)))
+            ifkeyP (Sequence (list expP expP expP)))
       (pchar #\})))))
 
 
@@ -88,8 +82,7 @@
    (lambda ()
      (Between
       (pchar #\{)
-      (Map (lambda (v) (let1E (fst (fst v)) (snd (fst v)) (snd v)))
-           (Map snd (Triple letkeyP letbindP expP)))
+      (Map3 (lambda (_ b c) (let1E (fst b) (snd b) c)) letkeyP letbindP expP)
       (pchar #\})))))
 
 ;; parse n'importe qu'elle EXP

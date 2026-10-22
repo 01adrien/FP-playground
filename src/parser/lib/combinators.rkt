@@ -16,9 +16,7 @@
 (define (Or parser1 parser2)
   (lambda (str)
     (let ([r1 (parser1 str)])
-      (if (failure? r1)
-          (parser2 str)
-          r1))))
+      (if (failure? r1) (parser2 str) r1))))
 
 ;; (Map fn parser)
 ;; applique `fn` à la valeur produite par le `parser`.
@@ -26,6 +24,28 @@
 (Map : (('a -> 'b) (Parser 'a) -> (Parser 'b)))
 (define (Map fn parser)
   (bind parser (lambda (x) (return (fn x)))))
+
+;; (Map2 f p1 p2)
+;; enchaîne deux parseurs et applique f à leurs deux résultats.
+(Map2 : (('a 'b -> 'c) (Parser 'a) (Parser 'b) -> (Parser 'c)))
+(define (Map2 f parser1 parser2)
+  (bind parser1
+        (lambda (a)
+          (bind parser2
+                (lambda (b)
+                  (return (f a b)))))))
+
+;; (Map3 f p1 p2 p3)
+;; enchaîne trois parseurs et applique f à leurs trois résultats.
+(Map3 : (('a 'b 'c -> 'd) (Parser 'a) (Parser 'b) (Parser 'c) -> (Parser 'd)))
+(define (Map3 f parser1 parser2 parser3)
+  (bind parser1
+    (lambda (a)
+      (bind parser2
+        (lambda (b)
+          (bind parser3
+            (lambda (c)
+              (return (f a b c)))))))))
 
 ;; (Any parsers)
 ;; essaie les `parsers` dans l'ordre, garde le premier qui réussit.
@@ -47,6 +67,9 @@
             (lambda (b) 
               (bind parser3 
                 (lambda (c) (return (pair a (pair b c))))))))))
+
+
+
 
 ;; (Quad p1 p2 p3 p4)
 ;; enchaîne quatre parseurs, renvoie une paire imbriquée (a . (b . (c . d))).
@@ -88,8 +111,8 @@
 
 ;; (Between open body close)
 (Between : ((Parser 'a) (Parser 'b) (Parser 'c) -> (Parser 'b)))
-(define (Between open body close)
-  (Map (lambda (res) (fst (snd res))) (Triple open body close)))
+(define (Between open p close)
+  (Map3 (lambda (_o x _c) x) open p close))
 
 ;; (Skip parser)
 (Skip : ((Parser 'a) -> (Parser Void)))
@@ -101,3 +124,11 @@
 (Replace : ((Parser 'a) 'b -> (Parser 'b)))
 (define (Replace parser value)
   (bind parser (lambda (_) (return value))))
+
+
+;; (Not parser)
+(Not : ((Parser 'a) -> (Parser Void)))
+(define (Not parser)
+  (lambda (str)
+    (let ([res (parser str)]) 
+      (if (success? res) (failure "Not failed") ((return (void)) str)))))

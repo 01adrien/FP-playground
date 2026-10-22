@@ -182,8 +182,7 @@
 ;; ---------- lois (comme pour bind) ----------
 
 ;; identité : Map avec la fonction identité ne change rien
-(define (id x)
-  x)
+(define (id x) x)
 (test (success-val ((Map id pdigit) "5x")) #\5)
 (test (success-rem ((Map id pdigit) "5x")) "x")
 (test (failure? ((Map id pdigit) "x5")) #t)
@@ -540,3 +539,174 @@
 (test ((Skip (Skip (ch #\a))) "abc") (success (void) "bc"))
 
 (done "Skip")
+
+;; =====================================================================
+;; MAP2 : enchaîne deux parseurs, applique f aux deux résultats
+;; =====================================================================
+
+;; ---------- succès ----------
+(test ((Map2 (lambda (a b) (list a b)) (pchar #\a) (pchar #\b)) "abc") (success (list #\a #\b) "c"))
+
+(test ((Map2 + pnum pnum) "34x") (success 7 "x"))
+
+;; ---------- l'ordre des arguments de f : premier résultat d'abord ----------
+(test ((Map2 - pnum pnum) "93") (success 6 ""))   ; 9 - 3, pas 3 - 9
+(test ((Map2 (lambda (a b) a) pnum pnum) "12") (success 1 ""))   ; garde le premier
+(test ((Map2 (lambda (a b) b) pnum pnum) "12") (success 2 ""))   ; garde le second
+
+;; ---------- le type du résultat est celui de f ----------
+(test ((Map2 (lambda (a b) (list->string (list a b))) (pchar #\a) (pchar #\b)) "abc")
+      (success "ab" "c"))
+(test ((Map2 pair pnum (pchar #\x)) "5x") (success (pair 5 #\x) ""))
+
+(define (Map2-list a b) (list a b))
+
+;; ---------- échecs : à chaque position ----------
+(test (failure? ((Map2 Map2-list (pchar #\a) (pchar #\b)) "xb")) #t)   ; le premier échoue
+(test (failure? ((Map2 Map2-list (pchar #\a) (pchar #\b)) "ax")) #t)   ; le second échoue
+(test (failure? ((Map2 Map2-list (pchar #\a) (pchar #\b)) "a")) #t)    ; trop court
+(test (failure? ((Map2 Map2-list (pchar #\a) (pchar #\b)) "")) #t)
+
+;; ---------- backtracking : un échec ne consomme rien ----------
+(test ((Or (Map2 Map2-list (pchar #\a) (pchar #\b))
+           (Map2 Map2-list (pchar #\a) (pchar #\c)))
+       "ac")
+      (success (list #\a #\c) ""))
+
+;; ---------- avec d'autres combinateurs ----------
+(test ((Map2 cons pnum (Many pnum)) "123") (success (list 1 2 3) ""))
+(test ((Map2 cons pnum (Many pnum)) "1") (success (list 1) ""))   ; Many vide
+(test ((Map2 (lambda (xs c) c) (Many pnum) (pchar #\!)) "12!") (success #\! ""))
+(test ((Map2 + (Map2 + pnum pnum) pnum) "123") (success 6 ""))   ; Map2 imbriqué
+(test ((Many (Map2 + pnum pnum)) "1234") (success (list 3 7) ""))
+
+(done "Map2")
+;; =====================================================================
+;; MAP3 : enchaîne trois parseurs, applique f aux trois résultats
+;; =====================================================================
+
+(define (Map3-list a b c) (list a b c))
+
+;; ---------- succès ----------
+(test ((Map3  Map3-list  (pchar #\a) (pchar #\b) (pchar #\c)) "abcd")
+      (success (list #\a #\b #\c) "d"))
+(test ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "abc")
+      (success (list #\a #\b #\c) ""))
+(test ((Map3 (lambda (a b c) (+ a c)) pnum (pchar #\+) pnum) "3+4") (success 7 ""))
+
+;; ---------- l'ordre des arguments de f ----------
+(test ((Map3 (lambda (a b c) a) pnum pnum pnum) "123") (success 1 ""))
+(test ((Map3 (lambda (a b c) b) pnum pnum pnum) "123") (success 2 ""))
+(test ((Map3 (lambda (a b c) c) pnum pnum pnum) "123") (success 3 ""))
+(test ((Map3 (lambda (a b c) (- (- a b) c)) pnum pnum pnum) "931") (success 5 ""))   ; (9-3)-1
+
+;; ---------- trois types différents ----------
+(test ((Map3 (lambda (a b c) (pair a (pair b c))) pnum (pchar #\+) pnum) "1+2")
+      (success (pair 1 (pair #\+ 2)) ""))
+
+;; ---------- échecs : à chaque position ----------
+(test (failure? ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "xbc")) #t)
+(test (failure? ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "axc")) #t)
+(test (failure? ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "abx")) #t)
+(test (failure? ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "ab")) #t)
+(test (failure? ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "a")) #t)
+(test (failure? ((Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c)) "")) #t)
+
+;; ---------- backtracking ----------
+(test ((Or (Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\c))
+           (Map3 Map3-list (pchar #\a) (pchar #\b) (pchar #\d)))
+       "abd")
+      (success (list #\a #\b #\d) ""))
+
+;; ---------- avec d'autres combinateurs ----------
+(test ((Map3 (lambda (a b c) (+ a c)) pnum (Many pspace) pnum) "1   2") (success 3 ""))
+(test ((Map3 (lambda (a b c) (+ a c)) pnum (Many pspace) pnum) "12") (success 3 ""))   ; zéro espace
+(test ((Map3 (lambda (o x c) x) (pchar #\() pint (pchar #\))) "(-42)") (success -42 ""))
+(test ((Many (Map3 (lambda (a b c) (+ a c)) pnum (pchar #\+) pnum)) "1+23+4")
+      (success (list 3 7) ""))
+
+(done "Map3")
+
+;; =====================================================================
+;; NOT : !e, réussit si p échoue, ne consomme jamais
+;; =====================================================================
+
+(define anyP (satisfy (lambda (c) #t)))   ; n'importe quel caractère
+
+;; ---------- réussit quand p échoue, sans rien consommer ----------
+(test ((Not (pchar #\a)) "bcd") (success (void) "bcd"))
+(test ((Not (pchar #\a)) "x") (success (void) "x"))
+(test ((Not (pchar #\a)) "") (success (void) ""))   ; p échoue sur le vide
+(test ((Not (pstring "let")) "lex") (success (void) "lex"))
+(test ((Not (pstring "let")) "le") (success (void) "le"))
+
+;; ---------- échoue quand p réussit ----------
+(test (failure? ((Not (pchar #\a)) "abc")) #t)
+(test (failure? ((Not (pchar #\a)) "a")) #t)
+(test (failure? ((Not (pstring "let")) "letter")) #t)
+(test (failure? ((Not (pstring "<-")) "<- x")) #t)
+
+;; ---------- il ne consomme jamais : le reste est l'entrée complète ----------
+(test (success-rem ((Not (pchar #\a)) "bcd")) "bcd")
+(test (success-rem ((Not (pchar #\a)) "")) "")
+
+;; ---------- double négation : !!p équivaut à &p (teste sans consommer) ----------
+(test ((Not (Not (pchar #\e))) "abc") (success (void) "abc"))
+(test (failure? ((Not (Not (pchar #\a))) "xbc")) #t)
+
+;; ---------- enchaîné avec un autre parseur ----------
+;; "pas un a, puis un b"
+(test ((Map2 (lambda (n c) c) (Not (pchar #\a)) (pchar #\b)) "bc")
+      (success #\b "c"))
+(test (failure? ((Map2 (lambda (n c) c) (Not (pchar #\a)) (pchar #\b)) "ab")) #t)
+(test (failure? ((Map2 (lambda (n c) c) (Not (pchar #\a)) (pchar #\b)) "xb")) #t)   ; b absent
+
+;; ---------- "n'importe quel caractère sauf" : !" puis anyP ----------
+(test ((Map2 (lambda (n c) c) (Not (pchar #\")) anyP) "abc") (success #\a "bc"))
+(test (failure? ((Map2 (lambda (n c) c) (Not (pchar #\")) anyP) "\"abc")) #t)
+
+;; contenu d'une chaîne jusqu'au guillemet
+(test ((Many (Map2 (lambda (n c) c) (Not (pchar #\")) anyP)) "abc\"def")
+      (success (list #\a #\b #\c) "\"def"))
+(test ((Many (Map2 (lambda (n c) c) (Not (pchar #\")) anyP)) "\"def")
+      (success empty "\"def"))                                  ; vide
+(test ((Many (Map2 (lambda (n c) c) (Not (pchar #\")) anyP)) "abc")
+      (success (list #\a #\b #\c) ""))                          ; jusqu'à la fin
+
+;; ---------- dans un choix : l'échec de ! ne consomme rien ----------
+(test ((Or (Map2 (lambda (n c) c) (Not (pchar #\a)) (pchar #\b))
+           (pchar #\a))
+       "abc")
+      (success #\a "bc"))
+
+;; ---------- le cas des mots-clés : le mot, pas suivi d'un caractère d'identifiant ----------
+(define (pkw s)
+  (Map2 (lambda (w n) w) (pstring s) (Not (pchars-in id-chars))))
+
+(test ((pkw "let") "let x") (success "let" " x"))
+(test ((pkw "let") "let") (success "let" ""))            ; fin d'entrée
+(test ((pkw "let") "let)") (success "let" ")"))
+(test ((pkw "let") "let{") (success "let" "{"))
+(test (failure? ((pkw "let") "letter")) #t)
+(test (failure? ((pkw "let") "let1")) #t)                ; un chiffre prolonge l'identifiant
+(test (failure? ((pkw "let") "let_")) #t)
+(test ((pkw "true") "true false") (success "true" " false"))
+(test (failure? ((pkw "true") "trueish")) #t)
+
+;; caractères d'un identifiant dans une grammaire PEG (lettres, chiffres, _)
+(peg-id-chars : String)
+(define peg-id-chars
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789_")
+
+;; ---------- l'identifiant qui n'est pas une tête de règle (grammaire PEG) ----------
+(define pegIdP (pchars-in peg-id-chars))
+(define primaryIdP (Map2 (lambda (id n) id) pegIdP (Not (pstring "<-"))))
+
+(test (primaryIdP "foo bar") (success "foo" " bar"))
+(test (primaryIdP "foo") (success "foo" ""))
+(test (primaryIdP "foo)") (success "foo" ")"))
+(test (failure? (primaryIdP "foo<-bar")) #t)   ; maintenant pour la bonne raison
+(test (failure? (primaryIdP "A<-B")) #t)
+
+
+(done "Not")

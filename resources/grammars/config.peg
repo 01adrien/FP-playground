@@ -1,0 +1,14 @@
+Config  <- Line* !.
+Line    <- Blank / Comment / Section / Entry
+Blank   <- HS EOL
+Comment <- HS [#;] (!EOL .)* End
+Section <- HS '[' HS Name HS ']' HS End
+Entry   <- HS Key HS '=' HS Value HS End
+Name    <- [a-zA-Z_] [-a-zA-Z0-9_.]*
+Key     <- [a-zA-Z_] [-a-zA-Z0-9_.]*
+Value   <- Quoted / Bare
+Quoted  <- '"' ('\\' . / !["\n] .)* '"'
+Bare    <- (![#;\r\n] .)*
+HS      <- [ \t]*
+EOL     <- '\r\n' / '\n' / '\r'
+End     <- EOL / !.

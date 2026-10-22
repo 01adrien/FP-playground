@@ -1,0 +1,112 @@
+COMBINATEURS 
+------------
+Left, Right   enchainer deux parseurs, ne garder qu'un cote
+Sep-by        elements separes par un separateur (zero ou plus)
+Sep-by1       idem, au moins un
+Chainl       operateurs associatifs a gauche (1-2-3 = (1-2)-3)
+Chainr       operateurs associatifs a droite (2^3^2 = 2^(3^2))
+
+
+SYNTAXE ABSTRAITE DES PEG - TRADUCTION ET RESUME
+=================================================
+
+TRADUCTION
+----------
+
+Syntaxe abstraite
+
+1. ε, la chaîne vide              -> (return (void))              
+2. a, un terminal (a ∈ V_T)       -> (pany-chars)
+3. A, un non-terminal (A ∈ V_N)   -> une regle du langage
+4. e1 e2, une séquence            -> (Sequence) ou (Or), dépend du typage voulu
+5. e1 / e2, un choix ordonné      -> (Any)
+6. e*, zéro répétition ou plus    -> (Many)
+7. !e, un prédicat négatif (not)  -> (Not)
+
+La syntaxe abstraite n'inclut pas :
+- les classes de caractères [...]
+- la constante « n'importe quel caractère » .
+- l'opérateur d'option ?
+- l'opérateur « une répétition ou plus » +
+- l'opérateur de prédicat positif &
+
+Tous apparaissent pourtant dans la syntaxe concrète. On les traite comme du
+« sucre syntaxique » et on les réduit à des expressions abstraites par
+substitutions locales :
+
+- L'expression . de la syntaxe concrète est considérée comme une classe de
+  caractères contenant tous les terminaux de V_T.
+
+- Si a1, a2, ..., an sont tous les terminaux listés dans une classe de
+  caractères (après développement des plages), cette classe se désucre en
+  l'expression abstraite a1 / a2 / ... / an.
+
+- Une option e? se désucre en e_d / ε, où e_d est le désucrage de e.
+
+- Une répétition « une fois ou plus » e+ se désucre en e_d e_d*.
+
+- Un prédicat positif &e se désucre en !(!e_d).
+
+
+RESUME
+------
+
+Une PEG n'a besoin que de 7 constructions de base : ε, terminal,
+non-terminal, séquence, choix ordonné, répétition * et prédicat négatif !.
+Tout le reste de la syntaxe pratique est du sucre syntaxique, réécrit
+mécaniquement en ces sept formes :
+
+  Sucre     Équivalent de base
+  -------   ------------------------------------
+  .         choix ordonné de tous les terminaux
+  [a-c]     a / b / c
+  e?        e / ε
+  e+        e e*
+  &e        !(!e)
+
+L'indice d signifie « désucré » : on désucre d'abord l'intérieur de
+l'expression, puis on applique la règle.
+
+L'intérêt : le générateur n'a que sept cas à implémenter, 
+le reste étant géré par une passe de réécriture préalable.
+
+
+Operateur   Type              Priorite   Description                  Dans ma lib
+---------   ---------------   --------   --------------------------   --------------
+' '         primaire          5          Chaine litterale             pstring
+" "         primaire          5          Chaine litterale             pstring
+[ ]         primaire          5          Classe de caracteres         pany-char / satisfy
+.           primaire          5          N'importe quel caractere     satisfy toujours vrai
+(e)         primaire          5          Groupement                   parentheses du code
+e?          suffixe unaire    4          Optionnel                    Optional
+e*          suffixe unaire    4          Zero ou plus                 Many
+e+          suffixe unaire    4          Un ou plus                   Many1
+&e          prefixe unaire    3          Predicat "et"                Peek
+!e          prefixe unaire    3          Predicat "non"               NotFollowedBy
+e1 e2       binaire           2          Sequence                     Sequence / Map2
+e1 / e2     binaire           1          Choix ordonne                Or / Choice
+
+
+NOTES
+-----
+- La priorite 5 est la plus forte.
+- !a b       se lit  (!a) b
+- a b / c d  se lit  (a b) / (c d)
+- a b*       se lit  a (b*)
+- Le choix est ORDONNE : e1 / e2 essaie e2 seulement si e1 echoue.
+- e* et e+ sont gloutons : ils ne rendent jamais ce qu'ils ont consomme.
+
+
+GENERATEUR DE PARSEURS PEG
+===========================
+
+Objectif : decrire une grammaire PEG comme une valeur Plait, la compiler vers
+mes combinateurs, puis ecrire un parseur qui lit les grammaires en texte.
+
+bootstrap, ecrire un parseur pour la grammaire PEG à la main en AST plait.
+faire generer a partir de la meme grammaire mais en peg l'ast et comparer
+AST a la main -> GRAMMAR -> PARSER GEN -> AST 
+
+                 
+fichier .peg ──► [P1 : lit le texte, produit l'AST] ──► [traducteur : AST → parseur] ──► P2
+(grammaire de PEG)        (écrit à la main)                                              (généré)

@@ -1,0 +1,10 @@
+Program <- WS Expr* !.
+Expr    <- Quote / List / String / Number / Symbol
+Quote   <- '\'' WS Expr
+List    <- '(' WS Expr* ')' WS
+String  <- '"' (!["] .)* '"' WS
+Number  <- '-'? [0-9]+ ('.' [0-9]+)? !SymChar WS
+Symbol  <- SymChar+ WS
+SymChar <- ![ \t\r\n()";'] .
+WS      <- ([ \t\r\n] / Comment)*
+Comment <- ';' (![\n] .)*

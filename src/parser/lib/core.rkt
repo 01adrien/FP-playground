@@ -47,10 +47,8 @@
 ;; Cas particulier de satisfy-map : la valeur produite est le caractère lui-même.
 (satisfy : ((Char -> Boolean) -> (Parser Char)))
 (define (satisfy pred)
-  (satisfy-map (lambda (c)
-                 (if (pred c)
-                     (some c)
-                     (none)))))
+  (satisfy-map 
+    (lambda (c) (if (pred c) (some c) (none)))))
 
 ;; (bind parser fn)
 ;;  1. lance `parser` sur l'entrée ;
@@ -65,7 +63,8 @@
     (let ([r (parser str)])
       (if (failure? r)
           (failure (failure-msg r))
-          (let ([next (fn (success-val r))]) (next (success-rem r)))))))
+          (let ([next (fn (success-val r))]) 
+            (next (success-rem r)))))))
 
 ;; (return val)
 ;; réussit toujours, sans consommer d'entrée, en produisant `val`.

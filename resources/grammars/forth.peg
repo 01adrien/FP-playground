@@ -1,0 +1,16 @@
+Program    <- WS Item* !.
+Item       <- Definition / Control / Comment / StrLit / Word
+Definition <- ':' Delim Name Item* ';' Delim
+Control    <- If / Loop / Begin
+If         <- 'if' Delim Item* ('else' Delim Item*)? 'then' Delim
+Loop       <- 'do' Delim Item* 'loop' Delim
+Begin      <- 'begin' Delim Item* 'until' Delim
+Comment    <- '(' Delim (!')' .)* ')' WS
+            / '\\' Delim (![\n] .)* WS
+StrLit     <- '." ' (!'"' .)* '"' WS
+Word       <- !Reserved Token
+Reserved   <- (':' / ';' / 'if' / 'else' / 'then' / 'do' / 'loop' / 'begin' / 'until') Delim
+Name       <- Token
+Token      <- (![ \t\r\n] .)+ WS
+Delim      <- (&[ \t\r\n] / !.) WS
+WS         <- [ \t\r\n]*

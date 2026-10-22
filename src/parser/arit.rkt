@@ -10,25 +10,26 @@
 ; F ::= (E) | digit
 
 (E : (Parser Number))
-(define E (lazy-parser (lambda () (Or (doPlus (Triple T (pchar #\+) E)) T))))
+(define E 
+  (lazy-parser 
+    (lambda () 
+      (Or 
+        (Map3 (lambda (a _ b) (+ a b)) T (pchar #\+) E) T))))
 
 (T : (Parser Number))
-(define T (lazy-parser (lambda () (Or (doTimes (Triple F (pchar #\*) T)) F))))
+(define T 
+  (lazy-parser 
+    (lambda () 
+      (Or 
+        (Map3 (lambda (a _ b) (* a b)) F (pchar #\*) T) F))))
 
 (F : (Parser Number))
-(define F (lazy-parser (lambda () (Or pnum (Map triple-snd (Triple (pchar #\() E (pchar #\))))))))
+(define F 
+  (lazy-parser 
+    (lambda () 
+      (Or 
+        (Map3 (lambda (_a b _c) b) (pchar #\() E (pchar #\))) pint))))
 
-(triple-snd : (('a * ('b * 'c)) -> 'b))
-(define (triple-snd v)
-  (fst (snd v)))
-
-(doTimes : ((Parser (Number * (Char * Number))) -> (Parser Number)))
-(define (doTimes p)
-  (Map (lambda (v) (* (fst v) (snd (snd v)))) p))
-
-(doPlus : ((Parser (Number * (Char * Number))) -> (Parser Number)))
-(define (doPlus p)
-  (Map (lambda (v) (+ (fst v) (snd (snd v)))) p))
 
 ;; ---------- F ----------
 (test (success-val (F "7")) 7)

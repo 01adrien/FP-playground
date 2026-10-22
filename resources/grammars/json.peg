@@ -1,0 +1,13 @@
+JSON    <- WS Value !.
+Value   <- Object / Array / String / Number / Keyword
+Object  <- '{' WS (Member (',' WS Member)*)? '}' WS
+Member  <- String ':' WS Value
+Array   <- '[' WS (Value (',' WS Value)*)? ']' WS
+String  <- '"' JChar* '"' WS
+JChar   <- '\\' ["\\/bfnrt]
+         / '\\u' Hex Hex Hex Hex
+         / !["\\] .
+Hex     <- [0-9a-fA-F]
+Number  <- '-'? ('0' / [1-9][0-9]*) ('.' [0-9]+)? ([eE] [-+]? [0-9]+)? WS
+Keyword <- ('true' / 'false' / 'null') WS
+WS      <- [ \t\r\n]*
