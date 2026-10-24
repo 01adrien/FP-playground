@@ -21,7 +21,6 @@
 ;; strict : sans ça, définir E demanderait E avant qu'il existe.
 ;; retarde la construction d'un parseur jusqu'au premier appel, pour permettre
 ;; les références vers une définition plus bas (récursion mutuelle).
-;; Les types sont vérifiés normalement : seule l'évaluation est repoussée.
 (lazy-parser : ((-> (Parser 'a)) -> (Parser 'a)))
 (define (lazy-parser parser)
   (lambda (str) ((parser) str)))

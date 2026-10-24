@@ -1,0 +1,76 @@
+Program     <- Spacing Declaration* !.
+Declaration <- ClassDecl / FunDecl / VarDecl / Statement
+ClassDecl   <- CLASS IDENT (LT IDENT)? LBRACE Function* RBRACE
+FunDecl     <- FUN Function
+Function    <- IDENT LPAREN Params? RPAREN Block
+Params      <- IDENT (COMMA IDENT)*
+VarDecl     <- VAR IDENT (EQ Expr)? SEMI
+
+Statement   <- PrintStmt / IfStmt / WhileStmt / ForStmt / ReturnStmt / Block / ExprStmt
+ExprStmt    <- Expr SEMI
+PrintStmt   <- PRINT Expr SEMI
+ReturnStmt  <- RETURN Expr? SEMI
+IfStmt      <- IF LPAREN Expr RPAREN Statement (ELSE Statement)?
+WhileStmt   <- WHILE LPAREN Expr RPAREN Statement
+ForStmt     <- FOR LPAREN (VarDecl / ExprStmt / SEMI) Expr? SEMI Expr? RPAREN Statement
+Block       <- LBRACE Declaration* RBRACE
+
+Expr        <- Assignment
+Assignment  <- LogicOr (EQ Assignment)?
+LogicOr     <- LogicAnd (OR LogicAnd)*
+LogicAnd    <- Equality (AND Equality)*
+Equality    <- Comparison ((NEQ / EQEQ) Comparison)*
+Comparison  <- Term ((GTE / GT / LTE / LT) Term)*
+Term        <- Factor ((MINUS / PLUS) Factor)*
+Factor      <- Unary ((SLASH / STAR) Unary)*
+Unary       <- (BANG / MINUS) Unary / Call
+Call        <- Primary (LPAREN Args? RPAREN / DOT IDENT)*
+Args        <- Expr (COMMA Expr)*
+Primary     <- TRUE / FALSE / NIL / THIS / NUMBER / STRING / IDENT
+             / LPAREN Expr RPAREN / SUPER DOT IDENT
+
+# --- Lexique : chaque jeton avale les blancs qui le suivent ---
+Spacing     <- (' ' / '\t' / '\r' / '\n' / Comment)*
+Comment     <- '//' (!'\n' .)*
+IdChar      <- [a-zA-Z0-9_]
+IDENT       <- !Keyword [a-zA-Z_] IdChar* Spacing
+NUMBER      <- [0-9]+ ('.' [0-9]+)? Spacing
+STRING      <- '"' (!'"' .)* '"' Spacing
+Keyword     <- ('and' / 'class' / 'else' / 'false' / 'for' / 'fun' / 'if' / 'nil' / 'or'
+              / 'print' / 'return' / 'super' / 'this' / 'true' / 'var' / 'while') !IdChar
+
+AND    <- 'and'    !IdChar Spacing      
+CLASS  <- 'class' !IdChar Spacing
+ELSE   <- 'else'   !IdChar Spacing      
+FALSE  <- 'false' !IdChar Spacing
+FOR    <- 'for'    !IdChar Spacing      
+FUN    <- 'fun'   !IdChar Spacing
+IF     <- 'if'     !IdChar Spacing      
+NIL    <- 'nil'   !IdChar Spacing
+OR     <- 'or'     !IdChar Spacing      
+PRINT  <- 'print' !IdChar Spacing
+RETURN <- 'return' !IdChar Spacing      
+SUPER  <- 'super' !IdChar Spacing
+THIS   <- 'this'   !IdChar Spacing      
+TRUE   <- 'true'  !IdChar Spacing
+VAR    <- 'var'    !IdChar Spacing      
+WHILE  <- 'while' !IdChar Spacing
+LPAREN <- '(' Spacing    
+RPAREN <- ')' Spacing    
+LBRACE <- '{' Spacing    
+RBRACE <- '}' Spacing
+COMMA  <- ',' Spacing    
+DOT    <- '.' Spacing    
+SEMI   <- ';' Spacing
+PLUS   <- '+' Spacing    
+MINUS  <- '-' Spacing    
+STAR   <- '*' Spacing    
+SLASH  <- '/' !'/' Spacing
+BANG   <- '!' !'=' Spacing
+EQ     <- '=' !'=' Spacing         
+EQEQ   <- '==' Spacing    
+NEQ    <- '!=' Spacing
+GTE    <- '>=' Spacing             
+GT     <- '>'  Spacing
+LTE    <- '<=' Spacing             
+LT     <- '<'  Spacing

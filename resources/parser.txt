@@ -18,8 +18,8 @@ Syntaxe abstraite
 1. ε, la chaîne vide              -> (return (void))              
 2. a, un terminal (a ∈ V_T)       -> (pany-chars)
 3. A, un non-terminal (A ∈ V_N)   -> une regle du langage
-4. e1 e2, une séquence            -> (Sequence) ou (Or), dépend du typage voulu
-5. e1 / e2, un choix ordonné      -> (Any)
+4. e1 e2, une séquence            -> (Sequence)
+5. e1 / e2, un choix ordonné      -> (Or)
 6. e*, zéro répétition ou plus    -> (Many)
 7. !e, un prédicat négatif (not)  -> (Not)
 

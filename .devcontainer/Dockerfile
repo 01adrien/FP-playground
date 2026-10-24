@@ -13,5 +13,5 @@ alias racket='rlwrap racket'
 PS1='\w\n\$ '
 EOF
 
-WORKDIR /workspace
+WORKDIR /workspaces
 CMD ["bash"]
