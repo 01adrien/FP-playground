@@ -3,3 +3,20 @@ racket -l errortrace -t exemple.rkt
 The Seasoned Schemer (Friedman & Felleisen)
 Essentials of Programming Languages (EOPL, Friedman & Wand)
 
+Pour une première lecture, sans formalisme lourd
+
+    A reckless introduction to Hindley-Milner type inference, tiré d’un exposé donné au travail par son auteur, sur LessWrong : https://lesswrong.com/posts/vTS8K4NBSi9iyCrPo/a-reckless-introduction-to-hindley-milner-type-inference
+    Type inference for beginners, de Dhruv Rajvanshi, une série qui construit l’inférence petit à petit, en commençant par la fonction la plus simple (je ne sais pas dans quel langage le code est écrit, à vérifier) : https://medium.com/@dhruvrajvanshi/type-inference-for-beginners-part-1-3e0a5be98a4b
+
+Pour comprendre en implémentant (le plus proche de ton projet)
+
+    Les notes de cours de Northeastern (CS 4410), qui décomposent le travail en préparation (environnements de types, substitutions), génération de contraintes puis résolution, avec des exercices intégrés : https://course.ccs.neu.edu/cs4410sp23/lec_type-inference_notes.html
+    TinyHM, de Tomas Petricek : un TP par étapes (résoudre des contraintes, ajouter conditionnelles et opérateurs, puis le let-polymorphisme). Le format est proche de l’AFP, avec des morceaux à compléter : https://d3s.mff.cuni.cz/files/teaching/nprg077/2025/4-tinyhm-3-peano.pdf
+
+Si tu lis le Haskell
+
+    Algorithm W Step by Step de Martin Grabmüller, conseillé dans un fil de la liste Haskell-cafe comme tutoriel didactique (le fil donne aussi des implémentations en Python et Scala) : https://mail.haskell.org/pipermail/haskell-cafe/2013-January/105816.html
+
+Plus formel (utile après coup) : les notes d’Arjun Guha sur l’inférence de types (UMass), avec règles de typage et contraintes : https://people.cs.umass.edu/~arjun/courses/compsci631-fall2017/reading/lecture8.pdf
+
+Pour ton cas, je commencerais par le premier article pour avoir l’intuition, puis je suivrais les notes de Northeastern ou TinyHM en traduisant en plait. Cela donnerait un mini-projet en plusieurs séances, dont la première étape (substitutions et unification) tient en une session.

@@ -71,3 +71,4 @@
 (return : ('a -> (Parser 'a)))
 (define (return val)
   (lambda (str) (success val str)))
+
