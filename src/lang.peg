@@ -1,0 +1,22 @@
+Exp      <- S* ( Num / Bool / Cnd / Lam / Var / Let / App ) S*
+
+Num      <- "-"? [0-9]+
+Bool     <- ( "true" / "false" ) !ReadChar
+Var      <- Id
+Id       <- IdChar+
+
+Cnd      <- Open KwIf Exp Exp Exp Close
+Let      <- Open KwLet Bindings Exp Close
+Bindings <- Open ( BOpen Id Exp BClose )+ Close
+Lam      <- Open KwLam Open ( Id S* )* Close Exp Close
+App      <- Open Exp Exp* Close
+
+KwIf     <- S* "if"  S+
+KwLet    <- S* "let" S+
+KwLam    <- S* "lam" S+
+
+Open     <- "{" S*
+Close    <- "}" S*
+BOpen    <- "[" S*
+BClose   <- "]" S*
+S        <- " "

@@ -56,6 +56,8 @@
       [(empty? parsers) (failure "Any(): no suitable parser")]
       [else ((Or (first parsers) (Any (rest parsers))) str)])))
 
+
+
 ;; (Triple parser1 parser2 parser3)
 ;; enchaîne trois parseurs ; renvoie leurs valeurs en paire imbriquée (a . (b . c)).
 (Triple : ((Parser 'a) (Parser 'b) (Parser 'c) 

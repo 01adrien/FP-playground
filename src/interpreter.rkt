@@ -4,7 +4,21 @@
          "parser.rkt"
          "desugar.rkt")
 
-(define the-env (hash empty))
+(define (lookup (s : Symbol) (n : Env))
+  (type-case (Optionof Value) (hash-ref n s) [(none) (error s "not bound")] [(some v) v]))
+
+
+(define std-lib
+  (hash (list (pair '* (lamV (list 'a 'b) (binE (mult) (varE 'a) (varE 'b)) (hash empty)))
+              (pair '+ (lamV (list 'a 'b) (binE (plus) (varE 'a) (varE 'b)) (hash empty)))
+              (pair '- (lamV (list 'a 'b) (binE (minus) (varE 'a) (varE 'b)) (hash empty)))
+              (pair '/ (lamV (list 'a 'b) (binE (div) (varE 'a) (varE 'b)) (hash empty))))))
+
+(define the-env std-lib)
+
+(merge-env : ((Hashof 'k 'v) (Hashof 'k 'v) -> (Hashof 'k 'v)))
+(define (merge-env base override)
+  (foldl (lambda (k acc) (hash-set acc k (some-v (hash-ref override k)))) base (hash-keys override)))
 
 (interp : (Exp Env -> Value))
 (define (interp exp env)
@@ -60,7 +74,7 @@
     (type-case Value
                (interp fun env)
                [(lamV params body e)
-                (interp body (foldl extend-list e (eval-args params args fname)))]
+                (interp body (foldl extend-list (merge-env e std-lib) (eval-args params args fname)))]
                [else (error fname "not a function")])))
 
 (eval-args : ((Listof 'a) (Listof 'b) Symbol -> (Listof ('a * 'b))))
@@ -74,13 +88,12 @@
 (define (boolean-decision v)
   (type-case Value v [(numV n) (> n 0)] [(boolV b) b] [else #f]))
 
-(define (lookup (s : Symbol) (n : Env))
-  (type-case (Optionof Value) (hash-ref n s) [(none) (error s "not bound")] [(some v) v]))
 
 #|
 (interp (parse "{let {[x 1]} {let {[f {lam y {+ 5 x}}]} {let {[x 78]} {f 10}}}}") the-env)
 (interp (parse "{let {[f {lam y {+ x 5}}]} {let {[x 78]} {f 10}}}") the-env)
- |#
+
+
 
 (let ([res (desugar (parse "{let {[fun {lam a b c {+ a {+ b c}}}]} {fun 5 10 15}}"))])
   (begin
@@ -88,16 +101,24 @@
     (display "\n\n")
     (display (exp->string res 0))))
 
+ |#
 ;; (interp (parse "{let {[f {lam y {+ x 5}}]} {let {[x 78]} {f 10}}}") the-env)
+
+(let ([res (desugar (parse "{+ 8 6 3}"))])
+  (begin
+    (display res)
+    (display "\n\n")
+    (display (exp->string res 0))))
+
 
 (print-only-errors #true)
 
 ;; =====================================================================
 ;; TESTS INTERP
 ;; =====================================================================
-
+#|
 (define (run s)
-  (interp (parse s) (hash empty)))
+  (interp (parse s) the-env))
 
 ;; ---------- littéraux ----------
 (test (run "5") (numV 5))
@@ -204,3 +225,4 @@
 (test/exn (run "{let {[f {lam x {+ x 1}}]} {f {/ 1 0}}}") "zero")
 ;; erreur dans le corps
 (test/exn (run "{let {[f {lam x {+ x true}}]} {f 1}}") "RHS")
+ |#

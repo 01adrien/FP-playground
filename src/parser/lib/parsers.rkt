@@ -50,18 +50,13 @@
 (define pdigit (pany-char (string->list "0123456789")))
 
 ;; (spaceP)
-;; reconnait un espae
-(pspace : (Parser Char))
 (define pspace (pchar #\space))
 
-;; (string-chars)
-;; caractères acceptés à l'intérieur d'une chaîne littérale "...".
-(string-chars : String)
-(define string-chars
-  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789 !#$%&'()*+,-./:;<=>?@[]^_`{|}~")
+;; (readable-chars)
+(define readable-chars
+  "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!#$%&'()*+,-./:;<=>?@[]^_`{|}~")
 
 ;; (id-chars)
-;; caractères acceptés dans un identifiant, style Lisp.
 (id-chars : String)
 (define id-chars "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789+-*/<=>!?_")
 
@@ -79,7 +74,7 @@
 ;; (pstring-literal)
 ;; reconnaît une chaîne entre guillemets et renvoie son contenu sans les guillemets.
 (pstring-literal : (Parser String))
-(define pstring-literal (Between (pchar #\") (pchars-in string-chars) (pchar #\")))
+(define pstring-literal (Between (pchar #\") (pchars-in (string-append readable-chars " ")) (pchar #\")))
 
 (pstring : (String -> (Parser String)))
 (define (pstring str)
@@ -89,3 +84,14 @@
 ;; reconnaît true ou false et renvoie le Boolean correspondant.
 (pbool : (Parser Boolean))
 (define pbool (Or (Replace (pstring "true") #t) (Replace (pstring "false") #f)))
+
+;;(peof)
+(peof : (Parser Void))
+(define (peof str)
+  (if (string=? str "")
+      (success (void) "")
+      (failure "peof(): expected end of input")))
+
+;;(peol)
+(define peol
+  (Any (list (pstring "\r\n") (pstring "\n"))))
